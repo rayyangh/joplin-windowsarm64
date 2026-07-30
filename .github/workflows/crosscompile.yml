@@ -23,15 +23,15 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # 1. Fetch JS dependencies safely
+      # 1. Standard install (allows keytar and sqlite3 native modules to build/fetch)
       - name: Install dependencies
-        run: yarn install --mode=skip-build
+        run: yarn install
 
-      # 2. Build monorepo shared packages FIRST (@joplin/utils, @joplin/lib)
+      # 2. Build Monorepo Shared Libraries FIRST (@joplin/utils, @joplin/lib)
       - name: Build Monorepo Shared Libraries
         run: yarn run buildParallel
 
-      # 3. Build Desktop App assets (can now resolve @joplin/utils)
+      # 3. Build Desktop App assets (esbuild can now find keytar.node)
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
