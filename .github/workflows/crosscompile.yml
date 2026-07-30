@@ -1,0 +1,56 @@
+name: Build Joplin for Windows ARM64
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-arm64:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      # 1. Install JS dependencies without running native builds (Yarn 4 syntax)
+      - name: Install dependencies
+        run: yarn install --mode=skip-build
+
+      # 2. Build Joplin desktop app assets
+      - name: Build Desktop App
+        run: |
+          cd packages/app-desktop
+          yarn run build
+
+      # 3. Package app for Windows ARM64
+      - name: Package Desktop App for WOA
+        run: |
+          cd packages/app-desktop
+          yarn run dist --win --arm64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_arch: arm64
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: joplin-win-arm64
+          path: packages/app-desktop/dist/*.exe
+
+      - name: Publish to GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          gh release create ${{ github.ref_name }} packages/app-desktop/dist/*.exe --title "Joplin WOA ${{ github.ref_name }}" --notes "Automated Windows on ARM (ARM64) build for Joplin."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
