@@ -26,8 +26,10 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Build Joplin Core/Lib
-        run: yarn run build
+      - name: Build Desktop App
+        run: |
+          cd packages/app-desktop
+          yarn run build
 
       - name: Package Desktop App for WOA
         run: |
@@ -36,14 +38,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Option 1: Save as an Artifact (Always runs, useful for manual workflow_dispatch test runs)
+      # Save artifact for manual test runs
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: joplin-win-arm64
           path: packages/app-desktop/dist/*.exe
 
-      # Option 2: Publish directly to the GitHub Releases page (Only runs on git tags)
+      # Publish directly to GitHub Releases page on tag push
       - name: Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/tags/')
         run: |
