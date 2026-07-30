@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   build-arm64:
-    runs-on: windows-latest
+    # Use native ARM64 Windows host — no cross-compilation required
+    runs-on: windows-arm64
 
     steps:
       - name: Checkout repository
@@ -23,24 +24,21 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # 1. Install JS dependencies without running native builds (Yarn 4 syntax)
+      # Standard Yarn install works cleanly on native ARM64 runner
       - name: Install dependencies
-        run: yarn install --mode=skip-build
+        run: yarn install
 
-      # 2. Build Joplin desktop app assets
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
           yarn run build
 
-      # 3. Package app for Windows ARM64
-      - name: Package Desktop App for WOA
+      - name: Package Desktop App
         run: |
           cd packages/app-desktop
-          yarn run dist --win --arm64
+          yarn run dist --win
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_arch: arm64
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
