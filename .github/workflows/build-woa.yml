@@ -23,9 +23,9 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # 1. Install JS dependencies without running native gyp builds on host
+      # 1. Install JS dependencies without running native builds (Yarn 4 syntax)
       - name: Install dependencies
-        run: yarn install --ignore-scripts
+        run: yarn install --mode=skip-build
 
       # 2. Build Joplin desktop app assets
       - name: Build Desktop App
