@@ -1,0 +1,39 @@
+name: Build Joplin for Windows ARM64
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allows manual triggers from GitHub UI
+
+jobs:
+  build-arm64:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Joplin Core/Lib
+        run: yarn run build
+
+      - name: Package Desktop App for WOA
+        run: |
+          cd packages/app-desktop
+          yarn run dist --win --arm64
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: joplin-win-arm64
+          path: packages/app-desktop/dist/*.exe
