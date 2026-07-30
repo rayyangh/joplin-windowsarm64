@@ -23,21 +23,17 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # Add C++ build environment tools available on windows-latest
-      - name: Setup MSVC C++ Build Tools
-        uses: llvm/actions/install-ninja@v1
-
-      # 1. Install JS dependencies without firing node-gyp on keytar immediately
+      # 1. Install JS dependencies without running native gyp builds on host
       - name: Install dependencies
         run: yarn install --ignore-scripts
 
-      # 2. Build Joplin core/desktop scripts
+      # 2. Build Joplin desktop app assets
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
           yarn run build
 
-      # 3. Package app for Windows ARM64 (Electron Builder compiles native modules for ARM64 here)
+      # 3. Package app for Windows ARM64
       - name: Package Desktop App for WOA
         run: |
           cd packages/app-desktop
