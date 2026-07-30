@@ -23,17 +23,21 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # 1. Install JS dependencies without running native builds (Yarn 4 syntax)
+      # 1. Install JS dependencies (skipping native C++ lifecycle scripts)
       - name: Install dependencies
         run: yarn install --mode=skip-build
 
-      # 2. Build Joplin desktop app assets
+      # 2. Build root packages FIRST (compiles @joplin/utils, @joplin/lib, etc.)
+      - name: Build Root Dependencies
+        run: yarn run build
+
+      # 3. Build Joplin desktop app assets
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
           yarn run build
 
-      # 3. Package app for Windows ARM64
+      # 4. Package app for Windows ARM64
       - name: Package Desktop App for WOA
         run: |
           cd packages/app-desktop
