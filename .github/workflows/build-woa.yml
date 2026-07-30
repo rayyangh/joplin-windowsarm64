@@ -3,11 +3,11 @@ name: Build Joplin for Windows ARM64
 on:
   push:
     tags:
-      - 'v*' # Triggers on release tags (e.g., v1.0.0, v3.1.2)
-  workflow_dispatch: # Allows manual trigger from the GitHub Actions UI
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
-  contents: write # Needed to create GitHub Releases and upload assets
+  contents: write
 
 jobs:
   build-arm64:
@@ -23,29 +23,35 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      - name: Install dependencies
-        run: yarn install
+      # Add C++ build environment tools available on windows-latest
+      - name: Setup MSVC C++ Build Tools
+        uses: llvm/actions/install-ninja@v1
 
+      # 1. Install JS dependencies without firing node-gyp on keytar immediately
+      - name: Install dependencies
+        run: yarn install --ignore-scripts
+
+      # 2. Build Joplin core/desktop scripts
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
           yarn run build
 
+      # 3. Package app for Windows ARM64 (Electron Builder compiles native modules for ARM64 here)
       - name: Package Desktop App for WOA
         run: |
           cd packages/app-desktop
           yarn run dist --win --arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_arch: arm64
 
-      # Save artifact for manual test runs
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: joplin-win-arm64
           path: packages/app-desktop/dist/*.exe
 
-      # Publish directly to GitHub Releases page on tag push
       - name: Publish to GitHub Releases
         if: startsWith(github.ref, 'refs/tags/')
         run: |
