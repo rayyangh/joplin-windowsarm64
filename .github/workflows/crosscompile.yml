@@ -23,15 +23,15 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # 1. Install JS dependencies (skipping native C++ lifecycle scripts)
+      # 1. Fetch JS dependencies safely
       - name: Install dependencies
         run: yarn install --mode=skip-build
 
-      # 2. Build root packages FIRST (compiles @joplin/utils, @joplin/lib, etc.)
-      - name: Build Root Dependencies
-        run: yarn run build
+      # 2. Build monorepo shared packages FIRST (@joplin/utils, @joplin/lib)
+      - name: Build Monorepo Shared Libraries
+        run: yarn run buildParallel
 
-      # 3. Build Joplin desktop app assets
+      # 3. Build Desktop App assets (can now resolve @joplin/utils)
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
