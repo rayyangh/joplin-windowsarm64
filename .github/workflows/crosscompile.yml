@@ -23,21 +23,21 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      # 1. Standard install (allows keytar and sqlite3 native modules to build/fetch)
+      # 1. Install dependencies on x64 host (generates initial keytar.node for esbuild)
       - name: Install dependencies
         run: yarn install
 
-      # 2. Build Monorepo Shared Libraries FIRST (@joplin/utils, @joplin/lib)
+      # 2. Build Monorepo Shared Libraries (@joplin/utils, @joplin/lib)
       - name: Build Monorepo Shared Libraries
         run: yarn run buildParallel
 
-      # 3. Build Desktop App assets (esbuild can now find keytar.node)
+      # 3. Build Desktop App assets (esbuild validates keytar.node path)
       - name: Build Desktop App
         run: |
           cd packages/app-desktop
           yarn run build
 
-      # 4. Package app for Windows ARM64
+      # 4. Cross-package for Windows ARM64 (electron-builder compiles final ARM64 binaries)
       - name: Package Desktop App for WOA
         run: |
           cd packages/app-desktop
@@ -46,16 +46,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: arm64
 
+      # 5. Upload build artifacts for workflow inspection
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: joplin-win-arm64
           path: packages/app-desktop/dist/*.exe
 
-      - name: Publish to GitHub Releases
-        if: startsWith(github.ref, 'refs/tags/')
+      # 6. Automatically create/update a GitHub Release with the executable asset
+      - name: Publish EXE to GitHub Releases
+        if: success()
+        shell: pwsh
         run: |
-          gh release create ${{ github.ref_name }} packages/app-desktop/dist/*.exe --title "Joplin WOA ${{ github.ref_name }}" --notes "Automated Windows on ARM (ARM64) build for Joplin."
+          $TAG_NAME = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "v1.0.0-arm64" }
+          
+          # Publish or attach the compiled .exe file directly to the GitHub release
+          gh release create $TAG_NAME packages/app-desktop/dist/*.exe `
+            --title "Joplin WOA ($TAG_NAME)" `
+            --notes "Automated Windows on ARM (ARM64) standalone executable build for Joplin." `
+            --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
